@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surviving the Ice Age</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --glacier-navy:#0b2540;
+    --deep-navy:#081a2e;
+    --ice-blue:#6fb8d9;
+    --snow-white:#f4f8fb;
+    --ember:#e8703a;
+    --ember-dim:#c9552a;
+    --stone:#8c7a5e;
+    --ash:#20181166;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth; height:100%;}
+  body{
+    font-family:'Work Sans', sans-serif;
+    background:var(--deep-navy);
+    color:var(--snow-white);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:100%;
+    text-align:center;
+  }
+  h1,h2,h3,.display{font-family:'Fraunces', serif;}
+  .mono{font-family:'Space Mono', monospace;}
+
+  /* Animated aurora + snow background, persistent across screens */
+  #bg-aurora{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(111,184,217,0.25), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 0%, rgba(232,112,58,0.10), transparent 60%),
+      linear-gradient(180deg, #0b2540 0%, #081a2e 55%, #060f1c 100%);
+  }
+  #snow-canvas{position:fixed; inset:0; z-index:1; pointer-events:none;}
+
+  .screen{
+    position:relative; z-index:2;
+    width:100%;
+    max-width:920px;
+    min-height:100vh;
+    margin:0 auto;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:6vh 6vw;
+    animation:fadeIn 0.6s ease;
+  }
+  .screen.active{display:flex;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    font-size:0.72rem;
+    color:var(--ice-blue);
+    margin-bottom:1rem;
+  }
+
+  /* ---- Title screen ---- */
+  #screen-title h1{
+    font-size:clamp(2.6rem, 7vw, 5.2rem);
+    font-weight:900;
+    line-height:0.98;
+    text-align:center;
+    max-width:16ch;
+    background:linear-gradient(180deg, var(--snow-white) 40%, var(--ice-blue) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+    text-shadow:0 8px 40px rgba(111,184,217,0.25);
+  }
+  .subtitle{
+    margin-top:1.2rem;
+    font-size:1.15rem;
+    color:#cfe4f2;
+    font-style:italic;
+    text-align:center;
+    max-width:40ch;
+  }
+  .narrative-block{
+    margin-top:2.2rem;
+    max-width:56ch;
+    text-align:center;
+    line-height:1.7;
+    color:#dbe9f2;
+    font-size:1.02rem;
+  }
+  .elements-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:1rem;
+    margin-top:2.8rem;
+    width:100%;
+    max-width:900px;
+  }
+  .element-card{
+    background:linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border:1px solid rgba(111,184,217,0.25);
+    border-radius:14px;
+    padding:1.4rem 1rem;
+    text-align:center;
+    backdrop-filter:blur(6px);
+    transition:transform 0.35s ease, border-color 0.35s ease;
+  }
+  .element-card:hover{transform:translateY(-6px); border-color:var(--ember);}
+  .element-card .icon{font-size:2.1rem; display:block; margin-bottom:0.5rem;}
+  .element-card h3{font-size:1rem; margin-bottom:0.3rem; font-weight:600;}
+  .element-card p{font-size:0.82rem; color:#a9c4d6;}
+
+  .btn{
+    font-family:'Space Mono', monospace;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:0.85rem;
+    padding:1rem 2.2rem;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    background:var(--ember);
+    color:var(--snow-white);
+    box-shadow:0 10px 30px rgba(232,112,58,0.35);
+    transition:transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  }
+  .btn:hover{transform:translateY(-3px) scale(1.02); background:var(--ember-dim); box-shadow:0 14px 36px rgba(232,112,58,0.45);}
+  .btn:focus-visible{outline:3px solid var(--ice-blue); outline-offset:3px;}
+  .btn-ghost{
+    background:transparent;
+    border:1px solid rgba(244,248,251,0.4);
+    box-shadow:none;
+  }
+  .btn-ghost:hover{background:rgba(244,248,251,0.08); box-shadow:none;}
+  .btn-row{display:flex; gap:1rem; margin-top:2.8rem; flex-wrap:wrap; justify-content:center;}
+
+  /* ---- Story screen ---- */
+  .story-card{
+    max-width:640px;
+    text-align:center;
+  }
+  .story-card p{
+    line-height:1.75;
+    font-size:1.05rem;
+    color:#dbe9f2;
+    margin-bottom:1rem;
+  }
+  .cause-effect{
+    margin:2.4rem auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:0.4rem;
+    font-family:'Space Mono', monospace;
+    font-size:0.95rem;
+  }
+  .ce-step{
+    background:rgba(111,184,217,0.1);
+    border:1px solid rgba(111,184,217,0.3);
+    padding:0.7rem 1.4rem;
+    border-radius:8px;
+    color:var(--ice-blue);
+  }
+  .ce-arrow{color:var(--stone); font-size:1.1rem;}
+  .core-question{
+    margin-top:2rem;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:1.3rem;
+    color:var(--ember);
+    max-width:34ch;
+  }
+
+  /* ---- Game screen ---- */
+  #screen-game{max-width:760px; margin:0 auto; width:100%;}
+  .progress-wrap{width:100%; margin-bottom:2rem;}
+  .progress-track{
+    width:100%; height:8px; border-radius:999px;
+    background:rgba(255,255,255,0.1); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; background:linear-gradient(90deg, var(--ice-blue), var(--ember));
+    width:0%; transition:width 0.5s ease;
+  }
+  .progress-meta{
+    display:flex; justify-content:space-between; margin-top:0.6rem;
+    font-family:'Space Mono', monospace; font-size:0.78rem; color:#a9c4d6;
+  }
+  .points-counter{color:var(--ember); font-weight:700;}
+
+  .scenario-card{
+    width:100%;
+    background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border:1px solid rgba(111,184,217,0.22);
+    border-radius:4px 22px 4px 22px;
+    padding:2.2rem;
+    position:relative;
+  }
+  .scenario-card::before{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:4px 22px 4px 22px;
+    padding:1px;
+    background:linear-gradient(160deg, rgba(232,112,58,0.35), transparent 40%);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    pointer-events:none;
+  }
+  .scenario-num{
+    font-family:'Space Mono', monospace;
+    color:var(--stone);
+    font-size:0.8rem;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    margin-bottom:0.6rem;
+  }
+  .scenario-card h2{font-size:1.7rem; margin-bottom:1rem;}
+  .image-placeholder{
+    width:100%;
+    height:220px;
+    border:1px solid rgba(111,184,217,0.3);
+    border-radius:10px;
+    overflow:hidden;
+    margin:0 auto 1.4rem;
+    background:rgba(255,255,255,0.02);
+  }
+  .image-placeholder img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .scenario-text{line-height:1.7; color:#dbe9f2; margin-bottom:1.8rem; font-size:1.02rem;}
+  .choices{display:grid; grid-template-columns:1fr 1fr; gap:1rem;}
+  .choice-btn{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    padding:1.1rem 1rem;
+    border-radius:12px;
+    border:1.5px solid;
+    cursor:pointer;
+    background:rgba(255,255,255,0.03);
+    text-align:left;
+    transition:transform 0.2s ease, background 0.2s ease;
+  }
+  .choice-btn:hover{transform:translateY(-3px);}
+  .choice-btn:focus-visible{outline:3px solid var(--ice-blue); outline-offset:2px;}
+  .choice-stay{border-color:#4a7fa3; color:#cfe4f2;}
+  .choice-stay:hover{background:rgba(74,127,163,0.18);}
+  .choice-move{border-color:#5fa87a; color:#d6f0e0;}
+  .choice-move:hover{background:rgba(95,168,122,0.18);}
+  .choice-label{display:block; font-family:'Space Mono', monospace; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:0.35rem; opacity:0.85;}
+
+  .consequence{
+    margin-top:1.6rem;
+    padding:1.4rem;
+    border-radius:12px;
+    background:rgba(255,255,255,0.04);
+    border-left:3px solid var(--ember);
+    display:none;
+    animation:fadeIn 0.5s ease;
+  }
+  .consequence.show{display:block;}
+  .consequence p{line-height:1.65; color:#dbe9f2; margin-bottom:0.8rem;}
+  .consequence .point-tag{
+    font-family:'Space Mono', monospace;
+    font-size:0.85rem;
+    color:var(--ember);
+  }
+  .next-btn{margin-top:1.2rem;}
+
+  /* ---- Ending screen ---- */
+  #screen-end{max-width:640px; text-align:center;}
+  .end-summary{
+    margin:2rem 0;
+    padding:1.6rem;
+    border-radius:14px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(111,184,217,0.25);
+  }
+  .end-summary .mono{font-size:2.4rem; color:var(--ember); display:block; margin-bottom:0.3rem;}
+  .adaptations{
+    text-align:left;
+    max-width:44ch;
+    margin:1.6rem auto;
+    line-height:1.9;
+    color:#dbe9f2;
+  }
+  .adaptations li{margin-left:1.4rem; margin-bottom:0.3rem;}
+  .connect-block{
+    margin-top:2rem;
+    padding-top:1.6rem;
+    border-top:1px solid rgba(255,255,255,0.15);
+    font-style:italic;
+    color:var(--ice-blue);
+    line-height:1.7;
+  }
+
+  footer.credit{
+    position:relative; z-index:2;
+    text-align:center;
+    padding:2rem 0 1rem;
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem;
+    color:#5c7d92;
+  }
+
+  @media (max-width:640px){
+    .elements-grid{grid-template-columns:1fr 1fr;}
+    .choices{grid-template-columns:1fr;}
+    .scenario-card{padding:1.5rem;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div id="bg-aurora"></div>
+<canvas id="snow-canvas"></canvas>
+
+<!-- SCREEN 1: TITLE -->
+<section class="screen active" id="screen-title">
+  <div class="eyebrow">World History · Paleolithic Age</div>
+  <h1>Surviving the Ice Age</h1>
+  <p class="subtitle">You are a human living during the last Ice Age.</p>
+  <p class="narrative-block">The world is covered in massive ice sheets. Temperatures are freezing. Your small community depends on nature to survive.</p>
+
+  <div class="elements-grid">
+    <div class="element-card">
+      <span class="icon">🔥</span>
+      <h3>Fire</h3>
+      <p>Warmth, protection, cooking</p>
+    </div>
+    <div class="element-card">
+      <span class="icon">🏹</span>
+      <h3>Hunting</h3>
+      <p>Finding animals for food</p>
+    </div>
+    <div class="element-card">
+      <span class="icon">🌿</span>
+      <h3>Gathering</h3>
+      <p>Collecting plants, roots, resources</p>
+    </div>
+    <div class="element-card">
+      <span class="icon">🚶</span>
+      <h3>Migration</h3>
+      <p>Following animals to safer land</p>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="goTo('screen-story')">Start Journey</button>
+  </div>
+</section>
+
+<!-- SCREEN 2: INTRO STORY -->
+<section class="screen" id="screen-story">
+  <div class="eyebrow">Chapter One</div>
+  <div class="story-card">
+    <h2 class="display" style="font-size:2rem; margin-bottom:1.4rem;">A Life on the Move</h2>
+    <p>You are part of a small Paleolithic community.</p>
+    <p>Your group does not live in permanent villages. You travel from place to place searching for food and resources.</p>
+
+    <div class="cause-effect">
+      <div class="ce-step">COLD CLIMATE</div>
+      <div class="ce-arrow">↓</div>
+      <div class="ce-step">Animals move to find food</div>
+      <div class="ce-arrow">↓</div>
+      <div class="ce-step">Humans follow animals</div>
+      <div class="ce-arrow">↓</div>
+      <div class="ce-step">Humans migrate to survive</div>
+    </div>
+
+    <p class="core-question">"Why couldn't Paleolithic humans stay in one place?"</p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="startGame()">Begin Survival Test</button>
+  </div>
+</section>
+
+<!-- SCREEN 3: GAME -->
+<section class="screen" id="screen-game">
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-meta">
+      <span id="progress-label">Round 1 / 5</span>
+      <span>Survival Points: <span class="points-counter" id="points-display">0</span></span>
+    </div>
+  </div>
+
+  <div class="scenario-card">
+    <div class="scenario-num" id="scenario-num">Scenario 1</div>
+    <h2 id="scenario-title">The Frozen Valley</h2>
+    <!-- Scenario illustration -->
+    <div class="image-placeholder">
+      <img id="scenario-image" src="https://i.imgur.com/NOYfTKF.jpeg" alt="">
+    </div>
+    <p class="scenario-text" id="scenario-text">A powerful cold wave arrives. The plants you gather become harder to find. Snow covers the land.</p>
+
+    <div class="choices" id="choices-row">
+      <button class="choice-btn choice-stay" onclick="makeChoice('stay')">
+        <span class="choice-label">🟦 Stay</span>
+        Remain in the valley and wait it out.
+      </button>
+      <button class="choice-btn choice-move" onclick="makeChoice('move')">
+        <span class="choice-label">🟩 Move</span>
+        Follow the animal tracks to new land.
+      </button>
+    </div>
+
+    <div class="consequence" id="consequence-box">
+      <p id="consequence-text"></p>
+      <span class="point-tag" id="consequence-points"></span>
+      <div><button class="btn next-btn" id="next-round-btn" onclick="nextRound()">Continue</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 4: ENDING -->
+<section class="screen" id="screen-end">
+  <div class="eyebrow">Reflection</div>
+  <h2 class="display" style="font-size:2.4rem;">Humans Are Resilient</h2>
+  <p style="margin-top:1rem; line-height:1.7; color:#dbe9f2;">Throughout history, humans survived because they adapted to challenges.</p>
+
+  <div class="end-summary">
+    <span class="mono" id="final-score">0 / 5</span>
+    <span style="color:#a9c4d6; font-size:0.85rem;">Survival Points Earned</span>
+  </div>
+
+  <p style="line-height:1.7; color:#dbe9f2;">During the last Ice Age, Paleolithic humans:</p>
+  <ul class="adaptations">
+    <li>used fire for warmth and protection</li>
+    <li>created tools for hunting</li>
+    <li>gathered available resources</li>
+    <li>migrated when environments changed</li>
+  </ul>
+
+  <p style="line-height:1.7; color:#dbe9f2;">Human survival depended not only on strength, but on creativity, cooperation, and adaptation.</p>
+
+  <div class="connect-block">
+    "Eventually, humans developed new ways of living. This led to the Neolithic Revolution — the beginning of farming, permanent settlements, and civilization."
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="sendPrompt('Continue to Neolithic Revolution')">Continue to Neolithic Revolution</button>
+    <button class="btn btn-ghost" onclick="restartGame()">Restart Journey</button>
+  </div>
+</section>
+
+<footer class="credit">Grade 8 World History · Before the Neolithic Revolution</footer>
+
+<script>
+/* ---------- Snow animation ---------- */
+const canvas = document.getElementById('snow-canvas');
+const ctx = canvas.getContext('2d');
+let flakes = [];
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function initFlakes(){
+  flakes = [];
+  const count = window.innerWidth < 640 ? 40 : 80;
+  for(let i=0;i<count;i++){
+    flakes.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      r: Math.random()*2.2 + 0.6,
+      speed: Math.random()*0.6 + 0.2,
+      drift: Math.random()*0.4 - 0.2,
+      opacity: Math.random()*0.5 + 0.2
+    });
+  }
+}
+initFlakes();
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function drawSnow(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(244,248,251,0.85)';
+  flakes.forEach(f=>{
+    ctx.globalAlpha = f.opacity;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+    ctx.fill();
+    f.y += f.speed;
+    f.x += f.drift;
+    if(f.y > canvas.height){ f.y = -5; f.x = Math.random()*canvas.width; }
+  });
+  ctx.globalAlpha = 1;
+  if(!reduceMotion) requestAnimationFrame(drawSnow);
+}
+if(!reduceMotion) requestAnimationFrame(drawSnow);
+
+/* ---------- Screen navigation ---------- */
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- Game state ---------- */
+const scenarios = [
+  {
+    title:"The Frozen Valley",
+    text:"A powerful cold wave arrives. The plants you gather become harder to find. Snow covers the land.",
+    image:"https://i.imgur.com/NOYfTKF.jpeg",
+    alt:"Frozen valley covered in Ice Age snow",
+    stay:{text:"Your food supply decreases. The environment can no longer provide enough resources.", points:-1},
+    move:{text:"You follow animal tracks toward a warmer region where resources are available.", points:1}
+  },
+  {
+    title:"The Missing Herd",
+    text:"The animals your community hunts suddenly disappear.",
+    image:"https://i.imgur.com/vMVMmYs.jpeg",
+    alt:"Empty hunting ground with no animals in sight",
+    stay:{text:"You wait, but the herd does not return. Your community struggles to find food.", points:-1},
+    move:{text:"You follow the migrating animals and discover a new hunting area.", points:1}
+  },
+  {
+    title:"The Empty Forest",
+    text:"The area around you has fewer plants and animals because your group has used many resources.",
+    image:"https://i.imgur.com/ree7j5I.jpeg",
+    alt:"Depleted forest with sparse vegetation",
+    stay:{text:"The environment cannot support your community anymore.", points:-1},
+    move:{text:"You travel to a new location with fresh resources.", points:1}
+  },
+  {
+    title:"The Harsh Winter",
+    text:"A longer winter arrives. Ice expands across the land.",
+    image:"https://i.imgur.com/WxqDWuz.jpeg",
+    alt:"Expanding ice sheet during a harsh winter",
+    stay:{text:"Your shelter becomes difficult to maintain and resources disappear.", points:-1},
+    move:{text:"Your group searches for a safer area and adapts.", points:1}
+  },
+  {
+    title:"The Final Journey",
+    text:"Your community must decide whether to remain or explore new lands.",
+    image:"https://i.imgur.com/PfaexGj.jpeg",
+    alt:"Community standing at a crossroads deciding whether to migrate",
+    stay:{text:"You survive temporarily, but your options become limited.", points:-1},
+    move:{text:"You discover that migration helps your community survive.", points:1}
+  }
+];
+
+let currentRound = 0;
+let survivalPoints = 0;
+let choiceMade = false;
+
+/* Preload all scenario images upfront so round transitions are instant */
+(function preloadScenarioImages(){
+  scenarios.forEach(s=>{
+    const img = new Image();
+    img.src = s.image;
+  });
+})();
+
+function startGame(){
+  currentRound = 0;
+  survivalPoints = 0;
+  choiceMade = false;
+  loadRound();
+  goTo('screen-game');
+}
+
+function loadRound(){
+  const s = scenarios[currentRound];
+  document.getElementById('scenario-num').textContent = `Scenario ${currentRound+1}`;
+  document.getElementById('scenario-title').textContent = s.title;
+  document.getElementById('scenario-image').src = s.image;
+  document.getElementById('scenario-image').alt = s.alt;
+  document.getElementById('scenario-text').textContent = s.text;
+  document.getElementById('choices-row').style.display = 'grid';
+  document.getElementById('consequence-box').classList.remove('show');
+  document.getElementById('progress-label').textContent = `Round ${currentRound+1} / 5`;
+  document.getElementById('progress-fill').style.width = `${(currentRound/5)*100}%`;
+  document.getElementById('points-display').textContent = survivalPoints;
+  choiceMade = false;
+}
+
+function makeChoice(type){
+  if(choiceMade) return;
+  choiceMade = true;
+  const s = scenarios[currentRound];
+  const outcome = s[type];
+  survivalPoints += outcome.points;
+
+  document.getElementById('consequence-text').textContent = outcome.text;
+  document.getElementById('consequence-points').textContent =
+    outcome.points > 0 ? `+${outcome.points} Survival Point — this choice reflects how migration helped early humans find new resources.`
+                        : `${outcome.points} Survival Point — this choice shows the challenge early humans faced when resources ran out in one place.`;
+  document.getElementById('points-display').textContent = survivalPoints;
+  document.getElementById('consequence-box').classList.add('show');
+  document.getElementById('choices-row').style.display = 'none';
+
+  const isLast = currentRound === scenarios.length - 1;
+  document.getElementById('next-round-btn').textContent = isLast ? 'See Results' : 'Continue';
+}
+
+function nextRound(){
+  currentRound++;
+  if(currentRound >= scenarios.length){
+    finishGame();
+  } else {
+    loadRound();
+  }
+}
+
+function finishGame(){
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('final-score').textContent = `${survivalPoints} / 5`;
+  goTo('screen-end');
+}
+
+function restartGame(){
+  startGame();
+}
+</script>
+</body>
+</html>
